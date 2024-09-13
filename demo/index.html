@@ -1,0 +1,210 @@
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="..\bcl_compiler.js"></script>
+</head>
+
+<style>
+
+  body {
+    background-color: rgb(5,5,5);
+    padding: 0;
+    margin: 0;
+    font-family: "Consolas";
+    font-size: 16px;
+    /*cursor: none;*/
+  }
+
+  .console {
+    width: 100%;
+    font-family: "Consolas";
+    color: white;
+  }
+
+  .datetime {
+    color: #919191;
+  }
+
+  .back {
+    display: inline-block;
+    width: 100%;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+  }
+
+  .b {
+    display: inline-block;
+    width: calc(100% - 46px);
+  }
+
+  /*.back-log { color: rgb(250,250,250); border-left: 3px solid transparent; }
+  .back-info { color: rgb(250,250,250); border-left: 3px solid transparent; }
+  .back-warn { color: rgb(250,250,250); border-left: 3px solid transparent; background-color: #fdffd4; }
+  .back-error { color: rgb(250,250,250); border-left: 3px solid transparent; background-color: #ff5c5c; }
+
+  .back-log:hover { color: rgb(5,5,5); border-left-color: #545454; background-color: #ededed; }
+  .back-info:hover { color: rgb(5,5,5); border-left-color: green; background-color: #d1ffe0; }
+  .back-warn:hover { color: rgb(5,5,5); border-left-color: #8a9100; background-color: #fbffb3; }
+  .back-error:hover { color: rgb(5,5,5); border-left-color: #ff4040; background-color: #ff7a7a; }*/
+
+  .log { color: rgb(160,160,160); }
+  .info { color: rgb(160,160,160); }
+  .warn { color: #8a9100; }
+  .error { color: #ff4040; }
+
+  .msg-log { color: rgb(250,250,250); }
+  .msg-info { color: rgb(250,250,250); }
+  .msg-warn { color: #8a9100; }
+  .msg-error { color: #ff4040; }
+
+  #input {
+    outline: none;
+    width: 100%;
+    border: none;
+    font-family: "Consolas";
+    font-size: 16px;
+    color: rgb(250, 250, 250);
+    background-color: rgb(5,5,5);
+    padding: 0;
+    margin: 0;
+    vertical-align: top;
+    line-height: normal;
+  }
+
+  #line-count {
+    color: rgb(100,100,100);
+    float: left;
+    padding: 0;
+    margin: 0;
+    vertical-align: top;
+  }
+
+  #input-wrapper {
+    column-count: 2;
+    vertical-align: top;
+  }
+
+</style>
+
+<body>
+
+  <div id="wrapper">
+    <div id="console" class="console">
+      <span class="datetime">
+        <span class="b"><span class="back back-info"><b><span class="info">SYSTEM&gt;&nbsp;</span></b><span class="msg-info">Console initialized. Welcome to BCL language. Type 'help' to get a list of possible commands.</span></span></span>
+        <span class="back back-info" style="color:rgb(0,0,0,0);">&nbsp;</span>
+      </span>
+    </div>
+      <!--<div style="width:100%;"><span id="line-count">1&nbsp;<br>2&nbsp;</span><span><b><span class="info">&gt;&nbsp;</span></b></span><span id="input" contenteditable="true"></span></div>-->
+      <table id="input-wrapper">
+        <tr>
+          <td id="line-count">1</td>
+          <td contenteditable="true" id="input" spellcheck="false"></td>
+        </tr>
+      </table>
+  </div>
+
+  <script>
+    document.getElementById("input").focus();
+
+    cmdHist = [];
+    curCmd = -1;
+    tmpCmd = "";
+
+    $("#input").on("input keydown keyup paste change", function(event) {
+      if (cmdHist.length > 0 && event.ctrlKey) {
+        if (event.which == 38 && curCmd < cmdHist.length - 1) {
+          if (curCmd == -1) tmpCmd = $("#input").html();
+          curCmd++;
+          $("#input").html(cmdHist[curCmd]);
+        } else if (event.which == 40) {
+          if (curCmd > 0) {
+            curCmd--;
+            $("#input").html(cmdHist[curCmd]);
+          } else {
+            curCmd = -1;
+            $("#input").html(tmpCmd);
+          }
+        }
+      }
+
+      let lineCount = document.getElementById("input").innerText.split("\n").length;
+      if (document.getElementById("input").innerText.endsWith("\n")) lineCount--;
+      let lines = "";
+      for (var i = 1; i <= lineCount; i++) {
+        lines += i + "&nbsp;<br>";
+      }
+      $("#line-count").html(lines);
+    });
+
+    $("#input").keyup(function(event) {
+      if (event.which == 13 && !event.shiftKey) {
+        if ($("#input").html() != "") {
+          //let res = compile($("#input").html());
+          cmdHist.unshift($("#input").html());
+          curCmd = -1;
+
+          compile($("#input").html());
+
+          /*let con1 = {
+            "type": "info",
+            "content": res.code,
+            "date": new Date().toJSON()
+          };
+          let con2 = {
+            "type": res.type,
+            "content": res.result,
+            "date": new Date().toJSON()
+          };*/
+
+          /*$("#console").append('<span class="back back-' + con1["type"] + '"><b><span class="' + con1["type"] +
+            '">USER&gt;&nbsp;</span></b><span class="msg-' + con1["type"] + '">' +
+  					con1["content"] + '</span></span></span>');
+          $("#console").append('<span class="back back-info" style="color:rgb(0,0,0,0);">&nbsp;</span>');
+          $("#console").append('<span class="back back-' + con2["type"] + '"><b><span class="' + con2["type"] +
+            '"></span></b><span class="msg-' + con2["type"] + '">' +
+      			con2["content"].replace(/\n/g, "<br>") + '</span></span></span>');
+          $("#console").append('<span class="back back-info" style="color:rgb(0,0,0,0);">&nbsp;</span>');
+          if (res.code == "clear") {
+            $("#console").empty();
+          }*/
+        } else {
+          $("#console").append('<span class="back back-info" style="color:rgb(0,0,0,0);">&nbsp;</span>');
+        }
+        $("#input").html("");
+        $("#line-count").html("1&nbsp;");
+        document.getElementsByTagName("body")[0].scrollTop = document.getElementsByTagName("body")[0].scrollHeight;
+      }
+    });
+
+    $("#input").blur(function(event) {
+      $("#input").focus();
+    });
+
+    function print(text, type = "log", level) {
+      text = text.replace(/\s/g, "&nbsp;").replace(/\n/g, "<br>");
+      if (level) {
+        $("#console").append('<span class="back back-' + type + '"><b><span class="' + type +
+          '">' + level + '&gt;&nbsp;</span></b><span class="msg-' + type + '">' +
+            text + '</span></span></span>');
+      } else {
+        $("#console").append('<span class="back back-' + type + '"><b><span class="' + type +
+          '"></span></b><span class="msg-' + type + '">' +
+          text + '</span></span></span>');
+      }
+    }
+
+    function clearConsole() {
+      $("#console").empty();
+    }
+
+    /*$("body").click(function(event){
+      $("#input").focus();
+    });*/
+
+    /*$('#wrapper').click(function(event){
+      event.stopPropagation();
+    });*/
+
+
+  </script>
+</body>
